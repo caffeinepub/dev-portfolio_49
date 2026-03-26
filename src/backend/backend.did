@@ -1,0 +1,66 @@
+type VisitorStats = 
+ record {
+   totalVisits: nat;
+   uniqueVisitors: nat;
+ };
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type Project = 
+ record {
+   createdAt: int;
+   description: text;
+   id: nat;
+   imageUrl: text;
+   tags: vec text;
+   title: text;
+   url: text;
+ };
+type Portfolio = 
+ service {
+   _initializeAccessControlWithSecret: (userSecret: text) -> ();
+   addComment: (projectId: nat, authorName: text, content: text) -> (nat);
+   approveComment: (commentId: nat) -> (bool);
+   assignCallerUserRole: (user: principal, role: UserRole) -> ();
+   createProject: (title: text, description: text, url: text, imageUrl: 
+    text, tags: vec text) -> (nat);
+   deleteComment: (commentId: nat) -> (bool);
+   deleteProject: (id: nat) -> (bool);
+   getAllComments: () -> (vec Comment);
+   getCallerUserRole: () -> (UserRole) query;
+   getComments: (projectId: nat) -> (vec Comment) query;
+   getContactMessages: () -> (vec ContactMessage);
+   getLikeCount: (projectId: nat) -> (nat) query;
+   getProject: (id: nat) -> (opt Project) query;
+   getProjects: () -> (vec Project) query;
+   getVisitorStats: () -> (VisitorStats) query;
+   hasLiked: (projectId: nat) -> (bool) query;
+   isCallerAdmin: () -> (bool) query;
+   recordVisit: () -> ();
+   submitContact: (name: text, email: text, message: text) -> (nat);
+   toggleLike: (projectId: nat) -> (nat);
+   updateProject: (id: nat, title: text, description: text, url: text,
+    imageUrl: text, tags: vec text) -> (bool);
+ };
+type ContactMessage = 
+ record {
+   email: text;
+   id: nat;
+   message: text;
+   name: text;
+   timestamp: int;
+ };
+type Comment = 
+ record {
+   approved: bool;
+   author: principal;
+   authorName: text;
+   content: text;
+   id: nat;
+   projectId: nat;
+   timestamp: int;
+ };
+service : () -> Portfolio
