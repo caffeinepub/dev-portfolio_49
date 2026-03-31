@@ -13,12 +13,13 @@ import {
   Eye,
   Heart,
   Loader2,
+  Lock,
   LogOut,
   MessageSquare,
   Plus,
   Shield,
   Trash2,
-  X,
+  User,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -32,12 +33,14 @@ import {
   useDeleteComment,
   useDeleteProject,
   useInitAdmin,
-  useIsAdmin,
   useLikeCount,
   useProjects,
   useUpdateProject,
   useVisitorStats,
 } from "../hooks/useQueries";
+
+const ADMIN_USERNAME = "suryanshswaraj";
+const ADMIN_PASSWORD = "surya_6745";
 
 interface AdminPanelProps {
   onExit: () => void;
@@ -166,9 +169,7 @@ function ProjectForm({
 }
 
 export default function AdminPanel({ onExit }: AdminPanelProps) {
-  const { login, clear, loginStatus, identity } = useInternetIdentity();
-  const isLoggedIn = !!identity;
-  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
+  const { clear } = useInternetIdentity();
   const { data: projects = [] } = useProjects();
   const { data: allComments = [] } = useAllComments();
   const { data: contactMessages = [] } = useContactMessages();
@@ -183,6 +184,29 @@ export default function AdminPanel({ onExit }: AdminPanelProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [adminSecret, setAdminSecret] = useState("");
+
+  // Username/password login state
+  const [localUsername, setLocalUsername] = useState("");
+  const [localPassword, setLocalPassword] = useState("");
+  const [localAuthError, setLocalAuthError] = useState("");
+  const [localAuthed, setLocalAuthed] = useState(false);
+
+  const handleLocalLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (localUsername === ADMIN_USERNAME && localPassword === ADMIN_PASSWORD) {
+      setLocalAuthError("");
+      setLocalAuthed(true);
+    } else {
+      setLocalAuthError("Incorrect username or password.");
+    }
+  };
+
+  const handleLogout = () => {
+    clear();
+    setLocalAuthed(false);
+    setLocalUsername("");
+    setLocalPassword("");
+  };
 
   const handleCreateProject = async (data: {
     title: string;
@@ -279,113 +303,80 @@ export default function AdminPanel({ onExit }: AdminPanelProps) {
               </span>
             </div>
           </div>
-          {isLoggedIn ? (
+          {localAuthed && (
             <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">
-                {identity?.getPrincipal().toString().slice(0, 10)}...
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <User className="w-3 h-3" /> {ADMIN_USERNAME}
               </span>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={clear}
+                onClick={handleLogout}
                 data-ocid="admin.logout_button"
                 className="text-foreground/70"
               >
                 <LogOut className="w-4 h-4 mr-2" /> Logout
               </Button>
             </div>
-          ) : (
-            <Button
-              onClick={login}
-              disabled={loginStatus === "logging-in"}
-              data-ocid="admin.login_button"
-              className="btn-primary"
-            >
-              {loginStatus === "logging-in" ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : null}
-              Login with Internet Identity
-            </Button>
           )}
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {!isLoggedIn ? (
+        {!localAuthed ? (
           <div
             className="flex flex-col items-center justify-center min-h-[60vh] text-center"
             data-ocid="admin.login_panel"
           >
             <div className="glass rounded-2xl p-12 max-w-md w-full space-y-6">
               <Shield className="w-16 h-16 text-primary mx-auto animate-pulse-glow" />
-              <h2 className="font-display text-3xl font-bold">Admin Access</h2>
-              <p className="text-muted-foreground">
-                Please login with Internet Identity to access the admin
-                dashboard.
+              <h2 className="font-display text-3xl font-bold">Admin Login</h2>
+              <p className="text-muted-foreground text-sm">
+                Enter your admin credentials to continue.
               </p>
-              <Button
-                onClick={login}
-                disabled={loginStatus === "logging-in"}
-                data-ocid="admin.login_primary_button"
-                className="btn-primary w-full py-3"
-              >
-                {loginStatus === "logging-in" ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Shield className="w-4 h-4 mr-2" />
+              <form onSubmit={handleLocalLogin} className="space-y-4 text-left">
+                <div className="space-y-2">
+                  <Label className="text-foreground/80">Username</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      value={localUsername}
+                      onChange={(e) => setLocalUsername(e.target.value)}
+                      placeholder="Enter username"
+                      autoComplete="username"
+                      className="glass border-border/50 bg-transparent text-foreground pl-9"
+                      data-ocid="admin.login.username_input"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground/80">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      value={localPassword}
+                      onChange={(e) => setLocalPassword(e.target.value)}
+                      placeholder="Enter password"
+                      autoComplete="current-password"
+                      className="glass border-border/50 bg-transparent text-foreground pl-9"
+                      data-ocid="admin.login.password_input"
+                    />
+                  </div>
+                </div>
+                {localAuthError && (
+                  <p className="text-sm text-destructive">{localAuthError}</p>
                 )}
-                Login with Internet Identity
-              </Button>
-            </div>
-          </div>
-        ) : adminLoading ? (
-          <div
-            className="flex items-center justify-center min-h-[60vh]"
-            data-ocid="admin.loading_state"
-          >
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          </div>
-        ) : !isAdmin ? (
-          <div
-            className="flex flex-col items-center justify-center min-h-[60vh] text-center"
-            data-ocid="admin.error_state"
-          >
-            <div className="glass rounded-2xl p-12 max-w-md w-full space-y-6">
-              <X className="w-16 h-16 text-destructive mx-auto" />
-              <h2 className="font-display text-3xl">Not Authorized</h2>
-              <p className="text-muted-foreground">
-                Your account is not registered as admin. Use the setup below to
-                register.
-              </p>
-              <div className="space-y-3 text-left">
-                <Label className="text-foreground/80">Admin Secret Key</Label>
-                <Input
-                  type="password"
-                  value={adminSecret}
-                  onChange={(e) => setAdminSecret(e.target.value)}
-                  placeholder="Enter admin secret"
-                  className="glass border-border/50 bg-transparent text-foreground"
-                />
                 <Button
-                  onClick={handleInitAdmin}
-                  disabled={!adminSecret || initAdmin.isPending}
-                  className="btn-primary w-full"
+                  type="submit"
+                  className="btn-primary w-full py-3"
+                  data-ocid="admin.login_primary_button"
                 >
-                  {initAdmin.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Shield className="w-4 h-4 mr-2" />
-                  )}
-                  Initialize Admin Access
+                  <Shield className="w-4 h-4 mr-2" />
+                  Login
                 </Button>
-              </div>
-              <Button
-                variant="ghost"
-                onClick={onExit}
-                className="text-foreground/60"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" /> Back to Portfolio
-              </Button>
+              </form>
             </div>
           </div>
         ) : (

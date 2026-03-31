@@ -100,7 +100,7 @@ export default function HeroSection() {
 
         {/* Name */}
         <h1 className="font-display text-6xl md:text-8xl lg:text-9xl font-bold mb-6 animate-fade-up-delay-1 leading-none">
-          <span className="gradient-text">Your Name</span>
+          <span className="gradient-text">SURYANSH SWARAJ</span>
         </h1>
 
         {/* Tagline */}
